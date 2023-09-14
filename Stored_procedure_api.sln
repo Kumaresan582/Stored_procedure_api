@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33213.308
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stored_procedure_api", "Stored_procedure_api\Stored_procedure_api.csproj", "{C4287B37-61E2-4ED7-9A17-59D3A9F0F008}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataBaseNull", "DataBaseNull\DataBaseNull.csproj", "{9743C728-3C10-4790-BA31-6A9AF5620B72}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C4287B37-61E2-4ED7-9A17-59D3A9F0F008}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4287B37-61E2-4ED7-9A17-59D3A9F0F008}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4287B37-61E2-4ED7-9A17-59D3A9F0F008}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4287B37-61E2-4ED7-9A17-59D3A9F0F008}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9743C728-3C10-4790-BA31-6A9AF5620B72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9743C728-3C10-4790-BA31-6A9AF5620B72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9743C728-3C10-4790-BA31-6A9AF5620B72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9743C728-3C10-4790-BA31-6A9AF5620B72}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {43BC1CDD-F018-48F3-8521-BA5EFA49A557}
+	EndGlobalSection
+EndGlobal
