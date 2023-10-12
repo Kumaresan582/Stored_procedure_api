@@ -1,7 +1,6 @@
 ﻿using DataBaseNull;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
-using iTextSharp.tool.xml;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -287,103 +286,140 @@ namespace Stored_procedure_api.Controllers
             }
         }
 
-        /* [HttpGet("CreatePdf")]
-         public IActionResult CreatePdf()
-         {
-             try
-             {
-                 // Create a new document
-                 iTextSharp.text.Document doc = new iTextSharp.text.Document();
-
-                 // Set the output file path (change as needed)
-                 string outputPath = "E:\\New folder\\output.pdf";
-
-                 // Create a MemoryStream to write the PDF content
-                 MemoryStream memoryStream = new MemoryStream();
-
-                 // Create a PdfWriter to write the document to the MemoryStream
-                 PdfWriter writer = PdfWriter.GetInstance(doc, memoryStream);
-
-                 // Open the document for writing
-                 doc.Open();
-
-                 // Create a new page
-                 doc.NewPage();
-
-                 // Add content to the PDF (e.g., text, images, tables)
-                 // Example: Adding text
-                 Paragraph paragraph = new Paragraph("Hello, this is a sample PDF!");
-                 doc.Add(paragraph);
-
-                 // Close the document and the writer
-                 doc.Close();
-                 writer.Close();
-
-                 // Save the PDF to a file
-                 using (FileStream fs = new FileStream(outputPath, FileMode.Create))
-                 {
-                     byte[] pdfBytes = memoryStream.ToArray();
-                     fs.Write(pdfBytes, 0, pdfBytes.Length);
-                 }
-
-                 Console.WriteLine("PDF created successfully at: " + outputPath);
-
-                 // Return the PDF file as a response
-                 return File(memoryStream.ToArray(), "application/pdf", "output.pdf");
-             }
-             catch (ObjectDisposedException ex)
-             {
-                 return BadRequest(ex.Message);
-             }
-         }*/
-
-        [HttpGet("Createpdf")]
+        [HttpGet("CreatePdf")]
         public IActionResult CreatePdf()
         {
             try
             {
-                string htmlTemplate = System.IO.File.ReadAllText(@"E:\New folder\template.html");
+                // Create a new document
+                iTextSharp.text.Document doc = new iTextSharp.text.Document();
 
-                string filledTemplate = htmlTemplate
-                   .Replace("{{StudentName}}", "Kumaresan")
-                   .Replace("{{MathScore}}", "95")
-                   .Replace("{{ScienceScore}}", "88")
-                   .Replace("{{EnglishScore}}", "92")
-                   .Replace("{{TotalScore}}", "275");
+                // Set the output file path (change as needed)
+                string outputPath = "E:\\New folder\\output.pdf";
 
-                iTextSharp.text.Document doc = new iTextSharp.text.Document(PageSize.A4, 30, 30, 10, 10);
-
+                // Create a MemoryStream to write the PDF content
                 MemoryStream memoryStream = new MemoryStream();
 
+                // Create a PdfWriter to write the document to the MemoryStream
                 PdfWriter writer = PdfWriter.GetInstance(doc, memoryStream);
 
+                // Open the document for writing
                 doc.Open();
 
-                using (StringReader sr = new StringReader(filledTemplate))
-                {
-                    XMLWorkerHelper.GetInstance().ParseXHtml(writer, doc, sr);
-                }
+                // Create a new page
+                doc.NewPage();
 
+                // Add content to the PDF (e.g., text, images, tables)
+                // Example: Adding text
+                Paragraph paragraph = new Paragraph("Hello, this is a sample PDF!");
+                doc.Add(paragraph);
+
+                // Close the document and the writer
                 doc.Close();
                 writer.Close();
 
-                /* // Save the PDF to a file
-                 using (FileStream fs = new FileStream(outputPath, FileMode.Create))
-                 {
-                     byte[] pdfBytes = memoryStream.ToArray();
-                     fs.Write(pdfBytes, 0, pdfBytes.Length);
-                 }*/
+                // Save the PDF to a file
+                using (FileStream fs = new FileStream(outputPath, FileMode.Create))
+                {
+                    byte[] pdfBytes = memoryStream.ToArray();
+                    fs.Write(pdfBytes, 0, pdfBytes.Length);
+                }
 
+                Console.WriteLine("PDF created successfully at: " + outputPath);
+
+                // Return the PDF file as a response
                 return File(memoryStream.ToArray(), "application/pdf", "output.pdf");
             }
             catch (ObjectDisposedException ex)
             {
                 return BadRequest(ex.Message);
             }
-            catch (Exception ex)
+        }
+
+        [HttpPost("Transaction")]
+        public IActionResult CreateOrder([FromBody] CreateOrderViewModel model)
+        {
+            if (ModelState.IsValid)
             {
-                return BadRequest(ex.Message);
+                try
+                {
+                    string customerName = model.CustomerName;
+                    int OrderId = model.OrderId;
+                    List<OrderItem> orderItems = model.OrderItems;
+
+                    CreateOrder(_connectionString, OrderId, customerName, orderItems);
+
+                    return Ok("Order created successfully");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest($"Failed to create the order. Reason: {ex.Message}");
+                }
+            }
+            else
+            {
+                return BadRequest("Model validation failed");
             }
         }
+
+
+        private static void CreateOrder(string con,int OrderId, string customerName, List<OrderItem> orderItems)
+        {
+            using (SqlConnection sqlConnection = new SqlConnection(con))
+            {
+                sqlConnection.Open();
+                SqlCommand sqlCommand = sqlConnection.CreateCommand();
+                SqlTransaction sqlTransaction;
+
+                sqlTransaction = sqlConnection.BeginTransaction("CreateOrder");
+                sqlCommand.Connection = sqlConnection;
+                sqlCommand.Transaction = sqlTransaction;
+
+                try
+                {
+                    // Insert a new order into the OrderOn table
+                    sqlCommand.CommandText = $"INSERT INTO OrderOn (OrderID, CustomerName, TotalAmount) VALUES ({OrderId},'{customerName}', 0.00)";
+                    sqlCommand.ExecuteNonQuery();
+
+                    /*// Retrieve the newly generated OrderID
+                    sqlCommand.CommandText = "SELECT SCOPE_IDENTITY()";
+                    int orderID = Convert.ToInt32(sqlCommand.ExecuteScalar());*/
+
+                    // Insert order items into the OrderItems table
+                    int OrderItemID = 102;
+                    foreach (var item in orderItems)
+                    {
+                        sqlCommand.CommandText = $"INSERT INTO OrderItems (OrderItemID,OrderID, ProductName, Quantity, Price) " +
+                                              $"VALUES ({OrderItemID}, {OrderId}, '{item.ProductName}', {item.Quantity}, {item.Price})";
+                        sqlCommand.ExecuteNonQuery();
+                        OrderItemID++;
+                    }
+
+                    // Calculate the total amount and update the OrderOn table
+                    sqlCommand.CommandText = $"UPDATE OrderOn SET TotalAmount = (SELECT SUM(Quantity * Price) FROM OrderItems WHERE OrderID = {OrderId}) WHERE OrderID = {OrderId}";
+                    sqlCommand.ExecuteNonQuery();
+
+                    // Commit the transaction
+                    sqlTransaction.Commit();
+                    sqlConnection.Close();
+                    Console.WriteLine("Order created successfully.");
+                }
+                catch (Exception ex)
+                {
+                    // Log the exception and rollback the transaction
+                    Console.WriteLine($"Order creation failed. Reason: {ex.Message}");
+                    try
+                    {
+                        sqlTransaction.Rollback();
+                        Console.WriteLine("Transaction rolled back.");
+                    }
+                    catch (Exception exception)
+                    {
+                        Console.WriteLine($"Rollback failed. Reason: {exception.Message}");
+                    }
+                }
+            }
+        }
+
     }
 }
