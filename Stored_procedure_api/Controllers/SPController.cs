@@ -363,7 +363,7 @@ namespace Stored_procedure_api.Controllers
         }
 
 
-        private static void CreateOrder(string con,int OrderId, string customerName, List<OrderItem> orderItems)
+        private static bool CreateOrder(string con,int OrderId, string customerName, List<OrderItem> orderItems)
         {
             using (SqlConnection sqlConnection = new SqlConnection(con))
             {
@@ -377,15 +377,13 @@ namespace Stored_procedure_api.Controllers
 
                 try
                 {
-                    // Insert a new order into the OrderOn table
                     sqlCommand.CommandText = $"INSERT INTO OrderOn (OrderID, CustomerName, TotalAmount) VALUES ({OrderId},'{customerName}', 0.00)";
                     sqlCommand.ExecuteNonQuery();
 
-                    /*// Retrieve the newly generated OrderID
+                    /*
                     sqlCommand.CommandText = "SELECT SCOPE_IDENTITY()";
                     int orderID = Convert.ToInt32(sqlCommand.ExecuteScalar());*/
 
-                    // Insert order items into the OrderItems table
                     int OrderItemID = 102;
                     foreach (var item in orderItems)
                     {
@@ -395,27 +393,27 @@ namespace Stored_procedure_api.Controllers
                         OrderItemID++;
                     }
 
-                    // Calculate the total amount and update the OrderOn table
                     sqlCommand.CommandText = $"UPDATE OrderOn SET TotalAmount = (SELECT SUM(Quantity * Price) FROM OrderItems WHERE OrderID = {OrderId}) WHERE OrderID = {OrderId}";
                     sqlCommand.ExecuteNonQuery();
 
-                    // Commit the transaction
                     sqlTransaction.Commit();
                     sqlConnection.Close();
                     Console.WriteLine("Order created successfully.");
+                    return true;
                 }
                 catch (Exception ex)
                 {
-                    // Log the exception and rollback the transaction
                     Console.WriteLine($"Order creation failed. Reason: {ex.Message}");
                     try
                     {
                         sqlTransaction.Rollback();
                         Console.WriteLine("Transaction rolled back.");
+                        return false;
                     }
                     catch (Exception exception)
                     {
                         Console.WriteLine($"Rollback failed. Reason: {exception.Message}");
+                        return false;
                     }
                 }
             }
