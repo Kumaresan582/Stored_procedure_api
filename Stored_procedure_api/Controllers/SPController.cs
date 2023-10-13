@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
-using System.Text;
 
 namespace Stored_procedure_api.Controllers
 {
@@ -45,13 +44,14 @@ namespace Stored_procedure_api.Controllers
                             {
                                 StudentModel model = new StudentModel
                                 {
-                                    Student_Id = DataReaderNull.GetValueOrNullInt(reader, "Student_Id"),
-                                    Student_Name = DataReaderNull.GetValueOrNullString(reader, "Student_Name"),
-                                    //Students_Age = DataReaderNull.GetValueOrNullInt(reader, "Student_Age"),
-                                    Students_Age = reader.IsDBNull(reader.GetOrdinal("Student_Age")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("Student_Age")),
-                                    Students_Course = DataReaderNull.GetValueOrNullString(reader, "Student_Course"),
-                                    Students_Mark = DataReaderNull.GetValueOrNullInt(reader, "Student_Marks"),
+                                    Student_Id = reader.TryGetInt32("Student_Id"),
+                                    Student_Name = reader.TryGetString("Student_Name"),
+                                    //Students_Age = reader.IsDBNull(reader.GetOrdinal("Student_Age")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("Student_Age")),
+                                    Students_Age = reader.TryGetInt32("Student_Age"),
+                                    Students_Course = reader.TryGetString("Student_Course"),
+                                    Students_Mark = reader.TryGetInt32("Student_Marks"),
                                 };
+
                                 results.Add(model);
                             }
 
@@ -85,16 +85,23 @@ namespace Stored_procedure_api.Controllers
                         {
                             if (reader.Read())
                             {
-                                StudentModel model = new StudentModel
-                                {
-                                    Student_Id = reader.GetInt32("Student_Id"),
-                                    Student_Name = reader.GetString("Student_Name"),
-                                    Students_Age = reader.GetInt32("Student_Age"),
-                                    Students_Course = reader.GetString("Student_Course"),
-                                    Students_Mark = reader.GetInt32("Student_Marks")
-                                };
+                                var mod = new StudentModel();
+                                reader.TryGetInt32("Student_Id", x => mod.Student_Id = x);
+                                reader.TryGetString("Student_Name", x => mod.Student_Name = x);
+                                reader.TryGetInt32("Student_Age", x => mod.Students_Age = x);
+                                reader.TryGetString("Student_Course", x => mod.Students_Course = x);
+                                reader.TryGetInt32("Student_Marks", x => mod.Students_Mark = x);
+
+                                /* StudentModel model = new StudentModel
+                                 {
+                                     Student_Id = reader.GetInt32("Student_Id"),
+                                     Student_Name = reader.GetString("Student_Name"),
+                                     Students_Age = reader.GetInt32("Student_Age"),
+                                     Students_Course = reader.GetString("Student_Course"),
+                                     Students_Mark = reader.GetInt32("Student_Marks")
+                                 };*/
                                 await connection.CloseAsync();
-                                return Ok(model);
+                                return Ok(mod);
                             }
 
                             return NotFound();
@@ -362,8 +369,7 @@ namespace Stored_procedure_api.Controllers
             }
         }
 
-
-        private static bool CreateOrder(string con,int OrderId, string customerName, List<OrderItem> orderItems)
+        private static bool CreateOrder(string con, int OrderId, string customerName, List<OrderItem> orderItems)
         {
             using (SqlConnection sqlConnection = new SqlConnection(con))
             {
@@ -418,6 +424,5 @@ namespace Stored_procedure_api.Controllers
                 }
             }
         }
-
     }
 }
