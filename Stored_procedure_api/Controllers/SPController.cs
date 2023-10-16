@@ -14,13 +14,15 @@ namespace Stored_procedure_api.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly spdbcontext _spdbcontext;
 
         //private readonly spdbcontext _context;
 
-        public SPController(IConfiguration configuration)
+        public SPController(IConfiguration configuration, spdbcontext spdbcontext)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("Kumaresan");
+            _spdbcontext = spdbcontext;
         }
 
         [HttpGet]
@@ -423,6 +425,26 @@ namespace Stored_procedure_api.Controllers
                     }
                 }
             }
+        }
+
+        [HttpGet("IdGenerate")]
+        public IActionResult UserIdGenerate()
+        {
+            int currentYear = DateTime.Now.Year;
+            int lastTwoDigits = currentYear % 100;
+            var userQuery = _spdbcontext.UserIdGenerate
+                .Where(u => u.UserId.StartsWith($"VAF-{lastTwoDigits}"))
+                .Select(u => u.UserId);
+
+            var userIDs = userQuery.ToList();
+            if (userIDs.Count == 0)
+                return Ok($"VAF-{lastTwoDigits}01");
+            var maxNumericPart = userIDs
+                .Select(u => int.Parse(u.Split('-').Last()))
+                .Max();
+            string newUserId = $"VAF-{(maxNumericPart + 1)}";
+
+            return Ok(newUserId);
         }
     }
 }

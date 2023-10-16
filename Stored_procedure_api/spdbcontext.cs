@@ -11,5 +11,6 @@ namespace Stored_procedure_api
 
         public DbSet<StudentModel> GetStudents { get; set; }
         public DbSet<StudentModel> GetStudentById { get; set; }
+        public DbSet<UserIdGen> UserIdGenerate { get; set; }
     }
 }
